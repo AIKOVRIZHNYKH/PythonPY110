@@ -15,7 +15,7 @@
 хранение маршрутов обработки представлений. 
 
 ```python
-# urls.py in store
+# urls.py.py in store
 
 from django.urls import path
 from .views import products_view, shop_view
@@ -32,7 +32,7 @@ urlpatterns = [
 Вот как трансформируются маршруты приложения `store` в корневом `urls.py`
 
 ```python
-path('', include('store.urls')),
+path('', include('store.urls.py')),
 ```
 А корневой `urls.py` будет выглядеть так
 
