@@ -20,22 +20,27 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path, include
 
-from app_datetime.views import datetime_view
-from app_weather.views import my_weather_view
-from store.views import products_view, shop_view
+from app_datetime.views import datetime_view        # ПОСЛЕ ИСПОЛЬЗОВАНИЯ INCLUDE (отдеельных файлов urls из приложений)
+from app_weather.views import my_weather_view       # ЭТИ ПРЕДСТАВЛЕНИЯ (вьюхи) СТАНОВЯТСЯ НЕЗАДЕЙСТВОВАННЫМИ
+from store.views import products_view, shop_view    # И ОКРАШИВАЮТСЯ СЕРЫМ
 
 
-def random_view(request):
-    if request.method == "GET":
-        return HttpResponse(random())
+def random_view(request):                   # ПИСАТЬ ПРЕДСТАВЛЕНИЯ (вьюхи) МОЖНО И ВНУТРИ ФАЙЛА URLS
+    if request.method == "GET":             # ТОГДА ИХ НЕ НАДО ИМПОРТИРОВАТЬ
+        return HttpResponse(random())       # НО ЭТО НЕ ЛУЧШАЯ ПРАКТИКА
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('random/', random_view),
-    path('datetime/', datetime_view),
-    # path('', include('app_weather.urls')),
-    path('weather/', my_weather_view),
-    path('', include('store.urls'))
-    #path('product/', products_view),
-    #path('', shop_view)
+    path('admin/', admin.site.urls),        # TODO НАЙТИ ГДЕ ЛЕЖИТ ЭТОТ ФАЙЛ И ЧЕМ ОН ЯВЛЯЕТСЯ - VIEWS ИЛИ URLS
+    path('random/', random_view),           # ПРЕДСТАВЛЕНИЕ (вьюха) В ТАКОМ СЛУЧАЕ ДОЛЖНА БЫТЬ ВЫШЕ
+
+    #path('datetime/', datetime_view),
+    path('', include('app_datetime.urls')),     # ВКЛЮЧЕНИЕ ПУТЕЙ ИЗ ОТДЕЛЬНОГО ФАЙЛА (urls.py) В ПРИЛОЖЕНИИ "app_datetime"
+
+    # path('weather/', my_weather_view),
+    path('', include('app_weather.urls')),      # ВКЛЮЧЕНИЕ ПУТЕЙ ИЗ ОТДЕЛЬНОГО ФАЙЛА (urls.py) В ПРИЛОЖЕНИИ "app_weather"
+
+    # path('product/', products_view),
+    # path('', shop_view)
+    path('', include('store.urls'))             # ВКЛЮЧЕНИЕ ПУТЕЙ ИЗ ОТДЕЛЬНОГО ФАЙЛА (urls.py) В ПРИЛОЖЕНИИ "store"
+
 ]
