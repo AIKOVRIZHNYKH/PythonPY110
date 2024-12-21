@@ -29,9 +29,10 @@ def products_view(request):
 
 def shop_view(request):
     if request.method == "GET":
-        with open('store/shop.html', 'r', encoding='utf-8') as f:
-            data = f.read()
-        return HttpResponse(data)
+        # with open('store/shop.html', 'r', encoding='utf-8') as f:
+        #     data = f.read()
+        # return HttpResponse(data)
+        return render(request, 'store/shop.html', context={'products': DATABASE.values()})
 
 def products_page_view(request, page):
     if request.method == "GET":
@@ -52,8 +53,19 @@ def products_page_view(request, page):
 def cart_view(request):
     if request.method == "GET":
         data = view_in_cart()
-        return JsonResponse(data, json_dumps_params={'ensure_ascii': False,
-                                                     'indent': 4})
+        format_for_result = request.GET.get('format')
+        if format_for_result and format_for_result.lower() == 'json':
+            return JsonResponse(data, json_dumps_params={'ensure_ascii': False, 'indent': 4})
+            # ТЕСТОВАЯ ССЫЛКА http://127.0.0.1:8000/cart/?format=json
+
+        products = []
+        for id_prod, count in data.get('products').items():
+            product = DATABASE[id_prod]
+            product['count'] = count
+            product['price_total'] = round(count * product['price_after'], 2)
+            products.append(product)
+
+        return render(request, 'store/cart.html', context = {'products': products})
 
 def cart_add_view(request, id_product):
     if request.method == "GET":
