@@ -1,3 +1,4 @@
+import os, json
 from store.models import DATABASE
 
 
@@ -31,6 +32,73 @@ def filtering_category(database: dict[str, dict],
         # result.sort(key=lambda ..., reverse=reverse)
         # Вспомните как можно сортировать по значениям словаря при помощи lambda функции
     return result
+
+
+def view_in_cart() -> dict:  # Уже реализовано, не нужно здесь ничего писать
+    """
+    Просматривает содержимое cart.json
+    :return: Содержимое 'cart.json'
+    """
+    if os.path.exists('cart.json'):  # Если файл существует
+        with open('cart.json', encoding='utf-8') as f:
+            return json.load(f)
+    cart = {'products': {}}  # Создаём пустую корзину
+    with open('cart.json', mode='x', encoding='utf-8') as f:   # Создаём файл и записываем туда пустую корзину
+        json.dump(cart, f)
+    return cart
+
+
+def add_to_cart(id_product: str) -> bool:
+    """
+    Добавляет продукт в корзину. Если в корзине нет данного продукта,
+    то добавляет его с количеством равное 1.
+    Если в корзине есть такой продукт, то добавляет количеству данного продукта + 1.
+    :param id_product: Идентификационный номер продукта в виде строки.
+    :return: Возвращает True в случае успешного добавления,
+    а False в случае неуспешного добавления (товара по id_product не существует).
+    """
+    cart = view_in_cart()   # json с корзиной товаров (питоновский словарь)
+    # if id_product in cart['products'] and id_product in DATABASE:
+    #     cart['products'][id_product] += 1
+    #     with open('cart.json', mode='w', encoding='utf-8') as f:
+    #         json.dump(cart, f)
+    #     return True
+    # elif id_product not in cart['products'] and id_product in DATABASE:
+    #     cart['product'][id_product] = 1
+    #     with open('cart.json', mode='w', encoding='utf-8') as f:
+    #         json.dump(cart, f)
+    #     return True
+    # else:
+    #     return False
+    if id_product in DATABASE:
+        if id_product in cart['products']:
+            cart['products'][id_product] += 1
+            #TODO надо разобраться почему фактически добавляется по 2 штуке за раз, а не по 1 штуке
+        else:
+            cart['products'][id_product] = 1
+        with open('cart.json', mode='w', encoding='utf-8') as f:
+            json.dump(cart, f)
+        return True
+    return False
+
+
+def remove_from_cart(id_product: str) -> bool:
+    """
+    Добавляет позицию продукта из корзины.
+    Если в корзине есть такой продукт, то удаляется ключ в словаре с этим продуктом.
+    :param id_product: Идентификационный номер продукта в виде строки.
+    :return: Возвращает True в случае успешного удаления,
+    а False в случае неуспешного удаления(товара по id_product не существует).
+    """
+    cart = view_in_cart()
+    if id_product not in cart['products']:
+        return False
+    cart['products'].pop(id_product)
+    with open('cart.json', mode='w', encoding='utf-8') as f:
+        json.dump(cart, f)
+    return True
+
+
 
 
 if __name__ == "__main__":
