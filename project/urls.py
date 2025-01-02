@@ -43,5 +43,7 @@ urlpatterns = [
     # path('', shop_view)
     path('', include('store.urls')),            # ВКЛЮЧЕНИЕ ПУТЕЙ ИЗ ОТДЕЛЬНОГО ФАЙЛА (urls.py) В ПРИЛОЖЕНИИ "store"
 
-    path('', include('app_login.urls'))
+    path('', include('app_login.urls')),
+
+    path('', include('wishlist.urls'))
 ]
