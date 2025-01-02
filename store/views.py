@@ -1,5 +1,7 @@
+from django.contrib.auth import get_user
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from store.models import DATABASE
 from logic.services import filtering_category, view_in_cart, add_to_cart, remove_from_cart
 
@@ -50,9 +52,15 @@ def products_page_view(request, page):
                 return HttpResponse(data)
         return HttpResponseNotFound("ПРОДУКТА НЕ СУЩЕСТВУЕТ")
 
+
+@login_required(login_url='login:login_view')
 def cart_view(request):
     if request.method == "GET":
-        data = view_in_cart()
+        # data = view_in_cart()
+
+        current_user = get_user(request).username
+        data = view_in_cart(request)[current_user]
+
         format_for_result = request.GET.get('format')
         if format_for_result and format_for_result.lower() == 'json':
             return JsonResponse(data, json_dumps_params={'ensure_ascii': False, 'indent': 4})
@@ -65,11 +73,14 @@ def cart_view(request):
             product['price_total'] = round(count * product['price_after'], 2)
             products.append(product)
 
-        return render(request, 'store/cart.html', context = {'products': products})
+        return render(request, 'store/cart.html', context={'products': products})
 
+
+@login_required(login_url='login:login_view')
 def cart_add_view(request, id_product):
     if request.method == "GET":
-        result = add_to_cart(id_product)
+        # result = add_to_cart(id_product)
+        result = add_to_cart(request, id_product)
         if result:
             return JsonResponse({"answer": "ПРОДУКТ УСПЕШНО ДОБАВЛЕН В КОРЗИНУ"},
                                 json_dumps_params={'ensure_ascii': False})
@@ -80,7 +91,8 @@ def cart_add_view(request, id_product):
 
 def cart_del_view(request, id_product):
     if request.method == "GET":
-        result = remove_from_cart(id_product)
+        # result = remove_from_cart(id_product)
+        result = remove_from_cart(request, id_product)
         if result:
             return JsonResponse({"answer": "ПРОДУКТ УСПЕШНО УБРАН ИЗ КОРЗИНЫ"},
                                 json_dumps_params={'ensure_ascii': False})
@@ -89,7 +101,70 @@ def cart_del_view(request, id_product):
                                 status=404,
                                 json_dumps_params={'ensure_ascii': False})
 
+def coupon_check_view(request, coupon_code):
+    DATA_COUPON = \
+        {
+        "coupon": {
+            "value": 10,
+            "is_valid": True},
+        "coupon_old": {
+            "value": 20,
+            "is_valid": False},
+        "coupon_new": {
+            "value": 30,
+            "is_valid": True}
+        }
+    if request.method == "GET":
+        if coupon_code in DATA_COUPON:          # Если запрашиваемый купон есть в списке купонов
+            coupon = DATA_COUPON[coupon_code]   # То запоминаем внутренний словарик (с ключами "value" и "is_valid")
+            data = {
+                "discount": coupon['value'],
+                "is_valid": coupon['is_valid']
+            }
+            return JsonResponse(data)
+        return HttpResponseNotFound('НЕВЕРНЫЙ КУПОН')
 
 
+def delivery_estimate_view(request):
+    DATA_PRICE = {
+        "Россия": {
+            "Москва": {"price": 80},
+            "Санкт-Петербург": {"price": 50},
+            "fix_price": 100,
+        },
+        "Беларусь": {
+            "Минск": {"price": 150},
+            "Брест": {"price": 200},
+            "fix_price": 250
+        }
+    }
+    if request.method == "GET":
+        data = request.GET
+        country = data.get("country")       # Считываем параметр по API
+        city = data.get("city")             # Считываем параметр по API
+        country_in_data = DATA_PRICE.get(country)   # Словарь со всеми городами указанной страны
+        city_in_data = country_in_data.get(city)    # Словарь с ценой доставки в указанный город
+        if country_in_data:
+            if city_in_data:
+                return JsonResponse({"price": city_in_data["price"]})
+            return JsonResponse({"price": country_in_data["fix_price"]})
+        return HttpResponseNotFound("НЕВЕРНЫЕ ДАННЫЕ")
 
+
+@login_required(login_url='login:login_view')
+def cart_buy_now_view(request, id_product):
+    if request.method == "GET":
+        # result = add_to_cart(id_product)
+        result = add_to_cart(request, id_product)
+        if result:
+            return redirect('store:cart_view')
+        return HttpResponseNotFound("НЕУДАЧНОЕ ДОБАВЛЕНИЕ ТОВАРА")
+
+def cart_remove_view(request, id_product):
+    if request.method == "GET":
+        # result = remove_from_cart(id_product)
+        result = remove_from_cart(request, id_product)
+        if result:
+            return redirect('store:cart_view')
+        return HttpResponseNotFound("НЕУДАЧНОЕ УДАЛЕНИЕ ТОВАРА ИЗ КОРЗИНЫ")
 
